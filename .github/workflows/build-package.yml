@@ -1,0 +1,42 @@
+name: Build Package
+
+on:
+  push:
+    branches: [ nats-storage ]
+    paths:
+      - 'packages/openauth/**'
+      - '.github/workflows/build-package.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+    
+    - name: Install dependencies
+      run: |
+        cd packages/openauth
+        bun install
+    
+    - name: Build package
+      run: |
+        cd packages/openauth
+        bun run build
+    
+    - name: Commit built files
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add packages/openauth/dist
+        git diff --staged --quiet || git commit -m "chore: build dist files [skip ci]"
+    
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}

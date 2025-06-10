@@ -2,9 +2,13 @@
   "name": "@openauthjs/openauth",
   "version": "0.4.3",
   "type": "module",
+  "main": "./dist/esm/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "scripts": {
     "build": "bun run script/build.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "prepare": "bun run build"
   },
   "sideEffects": false,
   "devDependencies": {
@@ -28,6 +32,14 @@
     "./ui": {
       "import": "./dist/esm/ui/index.js",
       "types": "./dist/types/ui/index.d.ts"
+    },
+    "./provider/*": {
+      "import": "./dist/esm/provider/*.js",
+      "types": "./dist/types/provider/*.d.ts"
+    },
+    "./storage/*": {
+      "import": "./dist/esm/storage/*.js",
+      "types": "./dist/types/storage/*.d.ts"
     }
   },
   "peerDependencies": {
@@ -37,18 +49,11 @@
   "dependencies": {
     "@standard-schema/spec": "1.0.0-beta.3",
     "aws4fetch": "1.0.20",
-    "jose": "5.9.6"
-  },
-  "peerDependenciesMeta": {
-    "@nats-io/kv": {
-      "optional": true
-    },
-    "@nats-io/jetstream": {
-      "optional": true
-    },
-    "@nats-io/transport-node": {
-      "optional": true
-    }
+    "jose": "5.9.6",
+    "@nats-io/nats-core": "^3.0.0",
+    "@nats-io/transport-node": "^3.0.0",
+    "@nats-io/jetstream": "^3.0.0",
+    "@nats-io/kv": "^3.0.0"
   },
   "files": [
     "src",
