@@ -1,0 +1,24 @@
+🚀 OpenAuth NATS issuer running at http://localhost:3002
+📧 Password provider enabled - verification codes will be logged to console
+Started development server: http://localhost:3002
+<-- GET /authorize
+--> GET /authorize [36m302[0m 35ms
+<-- GET /password/authorize
+--> GET /password/authorize [32m200[0m 1ms
+<-- GET /password/authorize
+--> GET /password/authorize [32m200[0m 1ms
+<-- GET /password/change
+--> GET /password/change [32m200[0m 2ms
+<-- POST /password/change
+Email verification code nats-test@example.com 040210
+--> POST /password/change [32m200[0m 4ms
+<-- POST /password/change
+--> POST /password/change [32m200[0m 2ms
+<-- POST /password/change
+--> POST /password/change [36m302[0m 6ms
+<-- GET /password/authorize
+--> GET /password/authorize [32m200[0m 0ms
+<-- POST /password/authorize
+--> POST /password/authorize [33m401[0m 3ms
+<-- POST /password/authorize
+--> POST /password/authorize [33m401[0m 12ms

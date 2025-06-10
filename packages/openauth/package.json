@@ -39,6 +39,17 @@
     "aws4fetch": "1.0.20",
     "jose": "5.9.6"
   },
+  "peerDependenciesMeta": {
+    "@nats-io/kv": {
+      "optional": true
+    },
+    "@nats-io/jetstream": {
+      "optional": true
+    },
+    "@nats-io/transport-node": {
+      "optional": true
+    }
+  },
   "files": [
     "src",
     "dist"

@@ -1,0 +1,19 @@
+{
+  "name": "example-nats-issuer",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run issuer.ts"
+  },
+  "dependencies": {
+    "@nats-io/jetstream": "^3.0.0",
+    "@nats-io/kv": "^3.0.0",
+    "@nats-io/transport-node": "^3.0.0",
+    "@openauthjs/openauth": "workspace:*",
+    "arctic": "^2.2.2",
+    "hono": "^4.0.0",
+    "nats": "2.29.3"
+  },
+  "devDependencies": {
+    "puppeteer": "24.10.0"
+  }
+}
