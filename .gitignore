@@ -7,3 +7,6 @@ persist.json
 notes
 .nvim.lua
 .svelte-kit
+
+# NATS API documentation (reference only)
+examples/natsjs-3.0.2-api/

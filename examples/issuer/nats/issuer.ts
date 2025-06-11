@@ -19,7 +19,7 @@ const js = jetstream(nc)
 const kvm = new Kvm(nc)
 const kv = await kvm.create("openauth", { 
   history: 5,
-  ttl: 60 * 60 * 24 * 30 // 30 days in seconds
+  ttl: 60 * 60 * 24 * 30 * 1000 // 30 days in milliseconds
 })
 
 export default issuer({

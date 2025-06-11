@@ -4,11 +4,12 @@
  *
  * ```ts
  * import { NatsStorage } from "@openauthjs/openauth/storage/nats"
- * import { connect } from "@nats-io/nats-node"
+ * import { connect } from "@nats-io/transport-node"
+ * import { Kvm } from "@nats-io/kv"
  *
  * const nc = await connect({ servers: "nats://localhost:4222" })
- * const js = nc.jetstream()
- * const kv = await js.views.kv("openauth")
+ * const kvm = new Kvm(nc)
+ * const kv = await kvm.create("openauth", { history: 5, ttl: 60 * 60 * 24 * 30 * 1000 })
  *
  * const storage = NatsStorage({
  *   kv

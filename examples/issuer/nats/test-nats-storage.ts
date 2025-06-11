@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
-import { connect } from "nats"
+import { connect } from "@nats-io/transport-node"
+import { jetstream } from "@nats-io/jetstream"
+import { Kvm } from "@nats-io/kv"
 import { NatsStorage } from "../../../packages/openauth/src/storage/nats.js"
 
 async function testNatsStorage() {
@@ -9,13 +11,14 @@ async function testNatsStorage() {
     // Connect to NATS
     console.log("📡 Connecting to NATS...")
     const nc = await connect({ servers: "nats://localhost:4222" })
-    const js = nc.jetstream()
+    const js = jetstream(nc)
     
     // Create KV bucket
     console.log("🗄️  Creating KV bucket...")
-    const kv = await js.views.kv("openauth-test", {
+    const kvm = new Kvm(nc)
+    const kv = await kvm.create("openauth-test", {
       history: 5,
-      ttl: 60 * 60 * 24 * 30 // 30 days
+      ttl: 60 * 60 * 24 * 30 * 1000 // 30 days in milliseconds
     })
     
     // Create storage adapter

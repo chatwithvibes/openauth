@@ -1,0 +1,239 @@
+---
+title: NATS KV
+description: Configure OpenAuth to use NATS KV as storage
+---
+
+Configure OpenAuth to use [NATS KV](https://docs.nats.io/nats-concepts/jetstream/key-value-store) as a storage adapter for distributed deployments.
+
+NATS KV (Key-Value) store provides a distributed, persistent storage solution built on top of NATS JetStream. It's ideal for multi-instance OpenAuth deployments where you need shared state across servers.
+
+## When to use
+
+NATS KV storage is recommended when:
+- You need distributed storage across multiple OpenAuth instances
+- You want built-in message history and audit trails
+- You're already using NATS in your infrastructure
+- You need TTL support for automatic cleanup
+- You want real-time updates via watch capabilities
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+bun add @nats-io/transport-node @nats-io/jetstream @nats-io/kv
+```
+
+### 2. Start NATS server
+
+Start a NATS server with JetStream enabled:
+
+```bash
+# Using Docker
+docker run -d --name nats-server \
+  -p 4222:4222 \
+  -p 8222:8222 \
+  nats:latest \
+  --jetstream \
+  --store_dir /data
+
+# Or using the NATS CLI
+nats-server --jetstream
+```
+
+### 3. Configure OpenAuth
+
+```ts title="issuer.ts"
+import { issuer } from "@openauthjs/openauth"
+import { NatsStorage } from "@openauthjs/openauth/storage/nats"
+import { connect } from "@nats-io/transport-node"
+import { Kvm } from "@nats-io/kv"
+
+// Connect to NATS
+const nc = await connect({ 
+  servers: process.env.NATS_URL || "nats://localhost:4222" 
+})
+
+// Create KV manager and bucket
+const kvm = new Kvm(nc)
+const kv = await kvm.create("openauth", { 
+  history: 5,                          // Keep 5 versions for audit
+  ttl: 60 * 60 * 24 * 30 * 1000,     // 30 days TTL in milliseconds
+  max_bytes: 10 * 1024 * 1024,        // 10MB max storage
+})
+
+export default issuer({
+  storage: NatsStorage({ kv }),
+  // ... rest of your configuration
+})
+```
+
+## Configuration options
+
+The NATS KV bucket supports various configuration options:
+
+```ts
+const kv = await kvm.create("openauth", {
+  // Number of historical values to keep per key
+  history: 5,
+  
+  // Time-to-live in milliseconds (auto-cleanup)
+  ttl: 60 * 60 * 24 * 30 * 1000, // 30 days
+  
+  // Maximum storage size
+  max_bytes: 10 * 1024 * 1024, // 10MB
+  
+  // Storage backend: "memory" or "file"
+  storage: "file",
+  
+  // Number of replicas (1, 3, or 5)
+  replicas: 3,
+  
+  // Enable compression (requires NATS 2.10+)
+  compression: true,
+  
+  // Description for the KV bucket
+  description: "OpenAuth session storage"
+})
+```
+
+## Production considerations
+
+### Connection resilience
+
+Add retry logic and connection monitoring:
+
+```ts
+async function connectToNats() {
+  const maxRetries = 5
+  let retries = 0
+  
+  while (retries < maxRetries) {
+    try {
+      const nc = await connect({ 
+        servers: process.env.NATS_URL || "nats://localhost:4222",
+        maxReconnectAttempts: -1,  // Infinite reconnects
+        reconnectTimeWait: 2000,    // 2s between attempts
+      })
+      
+      console.log("Connected to NATS")
+      return nc
+    } catch (error) {
+      retries++
+      if (retries >= maxRetries) throw error
+      await new Promise(r => setTimeout(r, 2000))
+    }
+  }
+  throw new Error("Failed to connect to NATS")
+}
+```
+
+### Clustering
+
+For high availability, configure multiple NATS servers:
+
+```ts
+const nc = await connect({ 
+  servers: [
+    "nats://nats1.example.com:4222",
+    "nats://nats2.example.com:4222",
+    "nats://nats3.example.com:4222"
+  ]
+})
+```
+
+### Security
+
+Enable TLS and authentication:
+
+```ts
+const nc = await connect({
+  servers: "nats://localhost:4222",
+  tls: {
+    caFile: "./ca.pem",
+    certFile: "./cert.pem",
+    keyFile: "./key.pem"
+  },
+  user: process.env.NATS_USER,
+  pass: process.env.NATS_PASS
+})
+```
+
+### Monitoring
+
+Monitor NATS connection health:
+
+```ts
+nc.on("error", (err) => {
+  console.error("NATS error:", err)
+})
+
+nc.on("disconnect", () => {
+  console.warn("NATS disconnected")
+})
+
+nc.on("reconnect", () => {
+  console.info("NATS reconnected")
+})
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  await nc.drain()
+  await nc.close()
+  process.exit(0)
+})
+```
+
+## Key encoding
+
+The NATS storage adapter automatically handles key encoding to comply with NATS naming restrictions. Keys that contain special characters are Base32-encoded to ensure compatibility.
+
+NATS accepts keys matching: `/^[-/=.>*\w]+$/`
+
+## Example deployment
+
+Here's a complete example with Docker Compose:
+
+```yaml title="docker-compose.yml"
+version: '3.8'
+
+services:
+  nats:
+    image: nats:latest
+    command: 
+      - "--jetstream"
+      - "--store_dir=/data"
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats-data:/data
+    environment:
+      - NATS_SERVER_NAME=openauth-nats
+
+  openauth:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - nats
+
+volumes:
+  nats-data:
+```
+
+## Comparison with other storage adapters
+
+| Feature | NATS KV | DynamoDB | Cloudflare KV | Memory |
+|---------|---------|----------|---------------|---------|
+| Distributed | ✅ | ✅ | ✅ | ❌ |
+| Persistent | ✅ | ✅ | ✅ | ❌ |
+| TTL Support | ✅ | ✅ | ✅ | ✅ |
+| History/Audit | ✅ | ❌ | ❌ | ❌ |
+| Real-time Watch | ✅ | ❌ | ❌ | ❌ |
+| Self-hosted | ✅ | ❌ | ❌ | ✅ |
+| Serverless | ❌ | ✅ | ✅ | ✅ |
+
+Choose NATS KV when you need a self-hosted, distributed storage solution with built-in history tracking and real-time capabilities.
