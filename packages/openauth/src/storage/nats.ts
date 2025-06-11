@@ -90,33 +90,14 @@ export function NatsStorage(options: NatsStorageOptions): StorageAdapter {
   }
 
   // Helper function to encode keys for NATS compatibility
-  // NATS only accepts keys matching /^[-/=.>*\w]+$/
+  // Always use base32 encoding for consistent key handling
   function encodeKeyForNats(key: string[]): string {
-    return key.map(k => {
-      // If the key segment contains only allowed characters, use it as-is
-      if (/^[-/=.>*\w]+$/.test(k)) {
-        return k
-      }
-      // Otherwise, encode it with base32
-      return base32Encode(k)
-    }).join('.')
+    return key.map(k => base32Encode(k)).join('.')
   }
 
   // Helper function to decode NATS keys back to array
   function decodeKeyFromNats(natsKey: string): string[] {
-    return natsKey.split('.').map(k => {
-      // Try to decode as base32 first, if it fails, use as-is
-      try {
-        const decoded = base32Decode(k)
-        // Check if decoded value makes sense (has non-ASCII or special chars)
-        if (/[^\x20-\x7E]|[@:+]/.test(decoded)) {
-          return decoded
-        }
-      } catch (e) {
-        // Not base32 encoded
-      }
-      return k
-    })
+    return natsKey.split('.').map(k => base32Decode(k))
   }
 
   return {
