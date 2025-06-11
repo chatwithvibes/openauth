@@ -1,5 +1,5 @@
 {
-  "name": "@openauthjs/openauth",
+  "name": "@chatwithvibes/openauth",
   "version": "0.4.3",
   "type": "module",
   "main": "./dist/esm/index.js",
@@ -58,5 +58,8 @@
   "files": [
     "src",
     "dist"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
 }

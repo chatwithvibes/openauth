@@ -1,0 +1,47 @@
+name: Publish Package
+
+on:
+  push:
+    branches: [ nats-storage ]
+    paths:
+      - 'packages/openauth/package.json'
+      - 'packages/openauth/src/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+    
+    - name: Install dependencies
+      run: |
+        cd packages/openauth
+        bun install
+    
+    - name: Build package
+      run: |
+        cd packages/openauth
+        bun run build
+    
+    - name: Setup Node for npm publish
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@chatwithvibes'
+    
+    - name: Publish to GitHub Packages
+      run: |
+        cd packages/openauth
+        npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
