@@ -693,6 +693,7 @@ export function issuer<
         aud: value.clientID,
         iss: issuer(ctx),
         sub: value.subject,
+        iat: accessTimeUsed,
       })
         .setExpirationTime(Math.floor(accessTimeUsed + value.ttl.access))
         .setProtectedHeader(
